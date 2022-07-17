@@ -11,6 +11,8 @@ Variations of these functions are available which accept a vector of vertex weig
 theta body is available as a semidefinite programming subroutine - it is possible to
 constrain a Convex.jl variable to be within the theta body.
 
+Full documentation is [here](https://dstahlke.github.io/LovaszTheta.jl).
+
 ## Examples
 
 ```julia
