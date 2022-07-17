@@ -17,6 +17,6 @@ makedocs(
 
 deploydocs(
     repo = "github.com/dstahlke/LovaszTheta.jl.git",
-    devbranch = "main",
+    devbranch = "master",
     branch = "gh-pages",
 )
