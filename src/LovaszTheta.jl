@@ -72,7 +72,7 @@ body by a non-negative constant or by a scalar `Convex.Variable`.
 
 julia> problem = maximize(sum(w), [w in TH(g)])
 
-julia> problem = minimuze(λ, [w in λ*TH(g)])
+julia> problem = minimize(λ, [w in λ*TH(g)])
 """
 TH(g::AbstractGraph, cone::ThetaConeType = Lovasz) = ThetaBody(g, cone)
 

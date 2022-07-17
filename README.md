@@ -13,28 +13,41 @@ constrain a Convex.jl variable to be within the theta body.
 
 ## Examples
 
-```jldoctest
-julia> using Graphs, LovaszTheta
-
-julia> abs(θ(cycle_graph(5)) - √5) < 1e-7
-true
+```julia
+using Graphs, LovaszTheta
+@assert abs(θ(cycle_graph(5)) - √5) < 1e-7
 ```
 
-Test that ``\max\left\{\sum w_i \middle| w \in \textrm{TH}(g) \right\} = \theta(g)``.
+Test that `max{sum(w) | w ∈ TH(g)} = θ(g)`.
 
-```jldoctest
-julia> using Graphs, LovaszTheta, Convex, SCS
+```julia
+using Graphs, LovaszTheta, Convex, SCS
+g = erdos_renyi(20, 0.5);
+w = Variable(nv(g));
+problem = maximize(sum(w), [w ∈ TH(g)]);
+solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
+@assert abs(problem.optval - θ(g)) < 1e-7
+```
 
-julia> g = erdos_renyi(20, 0.5);
+Test entropy splitting
+([Entropy splitting for antiblocking corners and perfect graphs](https://link.springer.com/article/10.1007/BF02122693)).
 
-julia> w = Variable(nv(g));
+```julia
+using Graphs, LovaszTheta, Convex, SCS
 
-julia> problem = maximize(sum(w), [w ∈ TH(g)]);
+function corner_entropy(p, corner)
+    w = Variable(nv(g))
+    problem = minimize(-p' * log(w), [w ∈ corner])
+    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
+    return problem.optval
+end
 
-julia> solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
-
-julia> abs(problem.optval - θ(g)) < 1e-7
-true
+g = erdos_renyi(20, 0.5)
+p = normalize(rand(nv(g)), 1)
+ent = -p'*log.(p)
+ce1 = corner_entropy(p, TH(g))
+ce2 = corner_entropy(p, TH(complement(g)))
+@assert abs(ent - (ce1 + ce2)) < 1e-7
 ```
 
 More examples can be found in the unit tests.
