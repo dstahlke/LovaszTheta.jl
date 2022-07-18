@@ -9,6 +9,8 @@ using Random
 
 tol = 1e-7
 
+make_optimizer = LovaszTheta.make_optimizer
+
 doctest(LovaszTheta)
 
 @testset "Basic tests" begin
@@ -39,7 +41,7 @@ end
     g = erdos_renyi(20, 0.5)
     w = Variable(nv(g))
     problem = maximize(sum(w), [w ∈ TH(g)])
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
+    solve!(problem, () -> make_optimizer(1e-8))
     @test abs(problem.optval - θ(g)) < tol
 end
 
@@ -61,7 +63,7 @@ end
     function corner_entropy(p, corner)
         w = Variable(nv(g))
         problem = minimize(-p' * log(w), [w ∈ corner])
-        solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
+        solve!(problem, () -> make_optimizer(1e-8))
         return problem.optval
     end
 
@@ -89,7 +91,7 @@ end
     add_constraint!(λ, N >= 0)
     add_constraint!(λ, f(λ) - N ⪰ 0) # optimize over PSD+NONNEG, a subset of completely positive
     problem = minimize(λ)
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=1e-8))
+    solve!(problem, () -> make_optimizer(1e-8))
 
     @test abs(problem.optval - θ⁻(g)) < tol
 end
