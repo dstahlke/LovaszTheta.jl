@@ -2,7 +2,7 @@ language: julia
 julia:
   - nightly
   - 1.7
-  - 1.0
+  - 1.6
 
 jobs:
   include:
