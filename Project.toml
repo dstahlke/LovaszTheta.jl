@@ -3,6 +3,9 @@ uuid = "d5f8441d-4651-43af-92fa-6ed80f165e74"
 authors = ["Dan Stahlke <dan@stahlke.org>"]
 version = "0.1.0"
 
+[compat]
+julia = "^1.6"
+
 [deps]
 Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
