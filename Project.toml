@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [compat]
 julia = "^1.6"
+SCS = "^1.0"
 
 [deps]
 Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
