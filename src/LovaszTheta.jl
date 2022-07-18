@@ -8,9 +8,23 @@ using LinearAlgebra
 using MathOptInterface
 import Base.*, Base.in
 
+MOI = MathOptInterface
+
 default_eps = 1e-8
 
 @enum ThetaConeType Lovasz Schrijver Szegedy
+
+function make_optimizer(eps)
+    optimizer = SCS.Optimizer()
+    if isdefined(MOI, :RawOptimizerAttribute) # as of MathOptInterface v0.10.0
+        MOI.set(optimizer, MOI.RawOptimizerAttribute("verbose"), 0)
+        MOI.set(optimizer, MOI.RawOptimizerAttribute("eps"), eps)
+    else
+        MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
+        MOI.set(optimizer, MOI.RawParameter("eps"), eps)
+    end
+    return optimizer
+end
 
 """
     θ(g::AbstractGraph, w::Convex.AbstractExpr)
@@ -109,8 +123,8 @@ function θ(g::AbstractGraph, w::AbstractArray{<:Number, 1}; eps=default_eps, co
     #λ = Variable()
     #add_constraint!(λ, w in λ * TH(complement(g), cone))
     problem = minimize(λ)
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=eps))
-    if problem.status == MathOptInterface.INTERRUPTED
+    solve!(problem, () -> make_optimizer(eps))
+    if problem.status == MOI.INTERRUPTED
         throw(InterruptException())
     end
     return problem.optval
@@ -125,8 +139,8 @@ function θ(g::AbstractGraph, w::AbstractArray{<:Number, 2}; eps=default_eps)
     x = Variable(nv(g))
     λ = θ(g, x)
     problem = minimize(λ, [ Diagonal(x) ⪰ w ])
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=eps))
-    if problem.status == MathOptInterface.INTERRUPTED
+    solve!(problem, () -> make_optimizer(eps))
+    if problem.status == MOI.INTERRUPTED
         throw(InterruptException())
     end
     return problem.optval
@@ -171,8 +185,8 @@ The returned weight vector will be normalized such that θ(complement(g), v) = 1
 function theta_dual_weight(g::AbstractGraph, w::AbstractArray{<:Number, 1}; eps=default_eps)
     v = Variable(nv(g))
     problem = maximize(w' * v, [ θ(complement(g), v) <= 1 ])
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=eps))
-    if problem.status == MathOptInterface.INTERRUPTED
+    solve!(problem, () -> make_optimizer(eps))
+    if problem.status == MOI.INTERRUPTED
         throw(InterruptException())
     end
     # Clamp to positive orthant.  Solver can produce numbers slightly below zero.
@@ -228,8 +242,8 @@ function theta_solution(g::AbstractGraph, w::AbstractArray{<:Number, 1}; eps=def
     push!(constraints, Y ⪰ R)
 
     problem = minimize(λ, constraints)
-    solve!(problem, () -> SCS.Optimizer(verbose=0, eps=eps))
-    if problem.status == MathOptInterface.INTERRUPTED
+    solve!(problem, () -> make_optimizer(eps))
+    if problem.status == MOI.INTERRUPTED
         throw(InterruptException())
     end
 
