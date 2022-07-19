@@ -18,12 +18,20 @@ function make_optimizer(eps)
     optimizer = SCS.Optimizer()
     if isdefined(MOI, :RawOptimizerAttribute) # as of MathOptInterface v0.10.0
         MOI.set(optimizer, MOI.RawOptimizerAttribute("verbose"), 0)
-        MOI.set(optimizer, MOI.RawOptimizerAttribute("eps_rel"), eps)
-        MOI.set(optimizer, MOI.RawOptimizerAttribute("eps_abs"), eps)
+        if isdefined(SCS, :ScsSettings) && hasfield(SCS.ScsSettings, :eps_rel) # as of SCS v0.9
+            MOI.set(optimizer, MOI.RawOptimizerAttribute("eps_rel"), eps)
+            MOI.set(optimizer, MOI.RawOptimizerAttribute("eps_abs"), eps)
+        else
+            MOI.set(optimizer, MOI.RawOptimizerAttribute("eps"), eps)
+        end
     else
         MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
-        MOI.set(optimizer, MOI.RawParameter("eps_rel"), eps)
-        MOI.set(optimizer, MOI.RawParameter("eps_abs"), eps)
+        if isdefined(SCS, :ScsSettings) && hasfield(SCS.ScsSettings, :eps_rel) # as of SCS v0.9
+            MOI.set(optimizer, MOI.RawParameter("eps_rel"), eps)
+            MOI.set(optimizer, MOI.RawParameter("eps_abs"), eps)
+        else
+            MOI.set(optimizer, MOI.RawParameter("eps"), eps)
+        end
     end
     return optimizer
 end

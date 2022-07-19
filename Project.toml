@@ -12,7 +12,7 @@ SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 
 [compat]
 julia = "^1.6"
-SCS = "0.7, 1"
+SCS = "0.7, 0.8, 0.9, 1"
 MathOptInterface = "0.9, 0.10, 1"
 Graphs = "1"
 Convex = "^0.13, 0.14, 0.15"
