@@ -110,3 +110,34 @@ end
     @test norm(nt1.Z * v - nt2.λ * w) < tol
     @test norm(nt1.Z * nt2.Z - w * v') < tol
 end
+
+@testset "Dual vector from T" begin
+    # Compute theta_dual_weight(g, w) from theta_solution(g, w).T.
+    # We take a maximization feasible point of θ(g, w) = λ and turn it into a minimization feasible
+    # point of θ(complement(g), v) = 1 with v' w = λ.
+    # This `v` and `Yc` should be returned as part of theta_solution, but I'd like to work out a
+    # proof of correctness before doing so.
+    Random.seed!(0)
+    g = erdos_renyi(20, 0.5)
+    w = rand(nv(g))
+    sol = theta_solution(g, w)
+    T = sol.T
+    λ = sol.λ
+    @test opnorm(T) ≈ λ  atol=tol
+
+    a = eigvecs(T)[:,end] # largest eigenvector
+    @test a' * T * a ≈ λ  atol=tol
+    b = real(sqrt(T) * a)
+    @test b' * b ≈ λ  atol=tol
+    v = diagm(pinv.(sqrt.(w))) * b
+    v = v .* v
+    @test θ(complement(g), v) ≈ 1  atol=tol
+    @test v' * w ≈ λ  atol=tol
+    @test v ≈ theta_dual_weight(g, w)  atol = tol
+
+    # Create a feasible solution for θ(complement(g), v) = 1.
+    Yc = diagm(pinv.(sqrt.(w))) * T * diagm(pinv.(sqrt.(w)))
+    @assert norm(adjacency_matrix(g) .* Yc) < tol
+    @assert minimum(eigvals(Hermitian(Yc - sqrt.(v) * sqrt.(v)'))) > -tol  # Y ⪰ v v'
+    @assert diag(Yc) ≈ ones(nv(g))  atol=tol
+end
