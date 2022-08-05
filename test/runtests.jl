@@ -141,3 +141,60 @@ end
     @assert minimum(eigvals(Hermitian(Yc - sqrt.(v) * sqrt.(v)'))) > -tol  # Y ⪰ v v'
     @assert diag(Yc) ≈ ones(nv(g))  atol=tol
 end
+
+@testset "Homomorphism hoax" begin
+    # Theorem 6 of arXiv:1310.7120, "Bounds on entanglement assisted
+    # source-channel coding via the Lovasz theta number and its
+    # variants."
+    #
+    # A semidefinite relaxation of homomorphism g → h exists iff
+    # θ(complement(g)) <= θ(complement(h)).
+    #
+    # See also R. Bacik and S. Mahajan, "Semidefinite programming and
+    # its applications to NP problems," 1995 where they call this
+    # semidefinite relaxation a "hoax" and show it exists iff
+    # θ(complement(g ∘ h)) = |V(g)| where g ∘ h is the hom-product.
+
+    g = cycle_graph(5)
+    h = complement(loadgraph(IOBuffer("GkYYd?"), "graph1", GraphIO.Graph6.Graph6Format()))
+
+    # Places where Cxyst must be zero.
+    # Theorem 3 of arXiv:1310.7120.
+    #Agh = adjacency_matrix(homomorphic_product(g, h)) # FIXME use this when Graphs.jl gets homomorphic_product
+    Agh = reshape([
+            (has_edge(g, x, y) && !has_edge(h, s, t)) || (x == y && s != t)
+            for
+            s in vertices(h),
+            x in vertices(g),
+            t in vertices(h),
+            y in vertices(g)
+        ], nv(g)*nv(h), nv(g)*nv(h))
+
+    solg = theta_solution(complement(g), ones(nv(g)))
+    solh = theta_solution(complement(h), ones(nv(h)))
+
+    # Solution exists when θ(complement(g)) <= θ(complement(h)).
+    @test solg.λ < solh.λ
+
+    eye(n) = Matrix(1.0*I, (n,n))
+
+    λ = solh.λ
+    B = solh.B
+    D = Hermitian(B .* eye(nv(h)))
+    @test minimum(eigvals(λ*D - B)) > -tol
+
+    J = Hermitian(ones(nv(g), nv(g)))
+    Z = Hermitian(solg.Y + (solh.λ - solg.λ)*eye(nv(g)) - J)
+    @test minimum(eigvals(Z)) > -tol
+
+    # Construct the hoax matrix.
+    ⊗ = kron
+    C = Hermitian(inv(λ) * (J ⊗ B + inv(λ-1) * Z ⊗ (λ * D - B)))
+
+    # C ⪰ 0
+    @test minimum(eigvals(C)) > -tol
+    # Zeros for the forbidden input/output pairs.
+    @test norm(C .* Agh) < tol
+    # \sum_{st} C_{xyst} = J
+    @test norm(reshape(sum(reshape(C, nv(h), nv(g), nv(h), nv(g)), dims=(1,3)), nv(g), nv(g)) - J) < tol
+end
